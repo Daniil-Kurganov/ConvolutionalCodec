@@ -16,8 +16,9 @@ class Codec:
             self.list_of_adders.append(Adder(list(map(int, input('Введите индексы для сумматора № {}: '.format(int_current_number_of_adder
                                                                                                               + 1)).split()))))
         self.dictionary_transition = self.create_transition_dictionary()
+        self.dictionary_trellis_diagram = {}
         return None
-    def encode_information_word(self, string_information_word: str) -> str:
+    def encode(self, string_information_word: str) -> str:
         '''Кодирование информационного слова'''
         list_information_word = [int(string_current_symbol) for string_current_symbol in string_information_word]
         list_registers, list_code_word = [0] * (self.int_count_of_registers - 1), []
@@ -55,6 +56,17 @@ class Codec:
                                                 (string_current_new_subname + string_current_registers_cut_name[
                                                     int_count_watching_registers - 1])])
             if not list_work_registers: return dictionary_result
+    def decode(self, string_code_word: str) -> str:
+        '''Декодирование кодового слова'''
+        if not self.dictionary_trellis_diagram: string_start_dictionary_state = self.dictionary_transition.keys()[0]
+        elif len(string_code_word) / len(self.list_of_adders)  <= len(self.dictionary_transition.keys()): pass
+        else: pass
+    def create_new_version_of_trellis_diagram_dictionary(self, string_start_dictionary_state: str, int_required_depth) -> None:
+        '''Создание/дополнение словаря решётчатой диаграммы
+
+        Вид словаря: {итерация: {состояние регистров: метка накопления ошибок, ...}}'''
+        return None
+
 
 def list_to_string(list_execute: list) -> str:
     '''Перевод строк в список'''
@@ -67,5 +79,5 @@ for string_current_key in codec.dictionary_transition.keys():
 string_input_text_real = input('\nВведите текст для кодирования: ')
 string_input_text_binary = bin(int.from_bytes(string_input_text_real.encode(), 'big'))[2:]
 print('Входное сообщение в бинарном виде:', string_input_text_binary)
-string_code_word = codec.encode_information_word(string_input_text_binary)
+string_code_word = codec.encode(string_input_text_binary)
 print('Кодовое слово:', string_code_word)

@@ -10,13 +10,12 @@ class Adder:
         return int_result_bit
 class Codec:
     def __init__(self) -> None:
-        self.int_count_of_registers = 3
+        self.int_count_of_registers, self.int_count_of_adders = 3, int(input('Введите количество сумматоров: '))
         self.list_of_adders = []
-        for int_current_number_of_adder in range(int(input('Введите количество сумматоров: '))):
+        for int_current_number_of_adder in range(self.int_count_of_adders):
             self.list_of_adders.append(Adder(list(map(int, input('Введите индексы для сумматора № {}: '.format(int_current_number_of_adder
                                                                                                               + 1)).split()))))
         self.dictionary_transition = self.create_transition_dictionary()
-        self.dictionary_trellis_diagram = {}
         return None
     def encode(self, string_information_word: str) -> str:
         '''Кодирование информационного слова'''
@@ -57,20 +56,45 @@ class Codec:
                                                     int_count_watching_registers - 1])])
             if not list_work_registers: return dictionary_result
     def decode(self, string_code_word: str) -> str:
-        '''Декодирование кодового слова'''
-        if not self.dictionary_trellis_diagram: string_start_dictionary_state = self.dictionary_transition.keys()[0]
-        elif len(string_code_word) / len(self.list_of_adders)  <= len(self.dictionary_transition.keys()): pass
-        else: pass
-    def create_new_version_of_trellis_diagram_dictionary(self, string_start_dictionary_state: str, int_required_depth) -> None:
-        '''Создание/дополнение словаря решётчатой диаграммы
+        '''Декодирование кодового слова
 
-        Вид словаря: {итерация: {состояние регистров: метка накопления ошибок, ...}}'''
-        return None
-
+        Создание/дополнение словаря решётчатой диаграммы и декодирование на его основе.
+        Вид словаря: {итерация: {состояние регистров: метка накопления ошибок, ...}}.'''
+        dictionary_trellis_diagram = {}
+        list_states_for_processing = ['00']
+        list_code_subwords = [string_code_word[int_point_of_trimm : int_point_of_trimm + self.int_count_of_adders] for int_point_of_trimm
+                              in range(0, len(string_code_word), self.int_count_of_adders)]
+        int_iteration = 0
+        for string_current_code_subword in list_code_subwords:
+            dictionary_workspace = {}
+            for string_current_state in list_states_for_processing:
+                for string_current_substate in self.dictionary_transition[string_current_state].keys():
+                    try:
+                        int_current_differences = get_number_of_differences(
+                            self.dictionary_transition[string_current_state][string_current_substate],
+                            string_current_code_subword) + dictionary_trellis_diagram[int_iteration - 1][string_current_state]
+                    except:
+                        int_current_differences = get_number_of_differences(self.dictionary_transition[string_current_state][string_current_substate],
+                                                                                                  string_current_code_subword)
+                    if string_current_substate in dictionary_workspace.keys() and dictionary_workspace[string_current_substate] <= int_current_differences:
+                        pass
+                    else: dictionary_workspace[string_current_substate] = int_current_differences
+            dictionary_trellis_diagram[int_iteration] = dictionary_workspace
+            int_iteration += 1
+            list_states_for_processing = [string_current_state for string_current_state in dictionary_workspace.keys()]
+        for i in dictionary_trellis_diagram.keys():
+            print(dictionary_trellis_diagram[i])
+        return ''
 
 def list_to_string(list_execute: list) -> str:
     '''Перевод строк в список'''
     return ''.join(list(map(str, list_execute)))
+def get_number_of_differences(string_first, string_second : str) -> int:
+    '''Нахождение количества несовпадений в строках по битам'''
+    int_counter_of_differences = 0
+    for int_current_index in range(len(string_first)):
+        if string_first[int_current_index] != string_second[int_current_index]: int_counter_of_differences += 1
+    return int_counter_of_differences
 
 codec = Codec()
 print('Cловарь переходов между состояниями:')
@@ -81,3 +105,4 @@ string_input_text_binary = bin(int.from_bytes(string_input_text_real.encode(), '
 print('Входное сообщение в бинарном виде:', string_input_text_binary)
 string_code_word = codec.encode(string_input_text_binary)
 print('Кодовое слово:', string_code_word)
+codec.decode(string_code_word)

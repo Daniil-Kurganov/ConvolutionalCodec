@@ -1,3 +1,5 @@
+import random
+
 class Adder:
     def __init__(self, list_indices_of_registers: list) -> None:
         self.list_indices_of_registers = list_indices_of_registers
@@ -102,6 +104,9 @@ def get_number_of_differences(string_first, string_second : str) -> int:
     for int_current_index in range(len(string_first)):
         if string_first[int_current_index] != string_second[int_current_index]: int_counter_of_differences += 1
     return int_counter_of_differences
+def changing_the_bit(string_bit: str) -> str:
+    '''Заменяет бит на противоположный'''
+    return str((int(string_bit) + 1) % 2)
 
 codec = Codec()
 print('Cловарь переходов между состояниями:')
@@ -112,7 +117,10 @@ string_input_text_binary = bin(int.from_bytes(string_input_text_real.encode(), '
 print('Входное сообщение в бинарном виде:', string_input_text_binary)
 string_code_word = codec.encode(string_input_text_binary)
 print('Кодовое слово:', string_code_word)
-string_output_text_binary = codec.decode(string_code_word)
+int_position_of_error = random.randint(0, len(string_code_word))
+string_message_word = (string_code_word[:int_position_of_error] + changing_the_bit(string_code_word[int_position_of_error]) +
+                       string_code_word[int_position_of_error + 1:])
+string_output_text_binary = codec.decode(string_message_word)
 if string_output_text_binary != string_input_text_binary: print('В процессе декодирования произошла ошибка.')
 string_output_text_real = int(string_output_text_binary, 2).to_bytes((int(string_output_text_binary, 2).bit_length() + 7) // 8, 'big').decode()
 print('Выходное сообщение:\n{}'.format(string_output_text_real))

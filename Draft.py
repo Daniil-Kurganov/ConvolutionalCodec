@@ -62,6 +62,7 @@ class Codec:
         Вид словаря: {итерация: {состояние регистров: метка накопления ошибок, ...}}.'''
         dictionary_trellis_diagram = {}
         list_states_for_processing = ['00']
+        string_result = ''
         list_code_subwords = [string_code_word[int_point_of_trimm : int_point_of_trimm + self.int_count_of_adders] for int_point_of_trimm
                               in range(0, len(string_code_word), self.int_count_of_adders)]
         int_iteration = 0
@@ -82,9 +83,15 @@ class Codec:
             dictionary_trellis_diagram[int_iteration] = dictionary_workspace
             int_iteration += 1
             list_states_for_processing = [string_current_state for string_current_state in dictionary_workspace.keys()]
-        for i in dictionary_trellis_diagram.keys():
-            print(dictionary_trellis_diagram[i])
-        return ''
+        print('Словарь решётчатой диаграммы:')
+        for string_current_key in dictionary_trellis_diagram.keys():
+            print('  {}: {}'.format(string_current_key, dictionary_trellis_diagram[string_current_key]))
+        for int_current_iteration in dictionary_trellis_diagram.keys():
+            int_current_index_state_minimal_difference = list(dictionary_trellis_diagram[int_current_iteration].keys()).index(min(
+                dictionary_trellis_diagram[int_current_iteration], key = dictionary_trellis_diagram[int_current_iteration].get))
+            if int_current_index_state_minimal_difference % 2 == 0: string_result += '0'
+            else: string_result += '1'
+        return string_result
 
 def list_to_string(list_execute: list) -> str:
     '''Перевод строк в список'''
@@ -105,4 +112,7 @@ string_input_text_binary = bin(int.from_bytes(string_input_text_real.encode(), '
 print('Входное сообщение в бинарном виде:', string_input_text_binary)
 string_code_word = codec.encode(string_input_text_binary)
 print('Кодовое слово:', string_code_word)
-codec.decode(string_code_word)
+string_output_text_binary = codec.decode(string_code_word)
+if string_output_text_binary != string_input_text_binary: print('В процессе декодирования произошла ошибка.')
+string_output_text_real = int(string_output_text_binary, 2).to_bytes((int(string_output_text_binary, 2).bit_length() + 7) // 8, 'big').decode()
+print('Выходное сообщение:\n{}'.format(string_output_text_real))

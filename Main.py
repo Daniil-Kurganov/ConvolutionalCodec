@@ -112,8 +112,8 @@ def show_error_message(string_error_message: str) -> None:
     '''Вывод ошибок'''
     message_error = QMessageBox()
     message_error.setIcon(QMessageBox.Critical)
-    message_error.setText(string_error_message)
-    message_error.setInformativeText('Некорректное создание кодека')
+    message_error.setText('Некорректное создание кодека')
+    message_error.setInformativeText(string_error_message)
     message_error.setWindowTitle("Ошибка!")
     message_error.exec_()
     return None
@@ -121,9 +121,22 @@ def create_codec() -> None:
     '''Создание нового кодека'''
     int_count_of_adders = int(ui.SpinBoxCountOfAdders.value())
     list_adders_registers, list_input_adders_registers_text = [], ui.TextEditAddersRegisters.toPlainText().split('\n')
-    if len(list_input_adders_registers_text) != int_count_of_adders: show_error_message('Количество сумматоров не совпадает с присвоенными регистрами')
-    for string_current_row_input in list_adders_registers:
-        if len(string_current_row_input) < 0 or len(string_current_row_input) > 
+    if len(list_input_adders_registers_text) != int_count_of_adders: show_error_message('Количество сумматоров не совпадает с присвоенными регистрами.')
+    for string_current_row_input in list_input_adders_registers_text:
+        int_length_of_row = len(string_current_row_input)
+        if 1 <= int_length_of_row <= int_length_of_row * 2 -1 and int_length_of_row % 2 != 0:
+            list_workspace = []
+            for string_current_number in string_current_row_input.split(' '):
+                int_current_number = int(string_current_number)
+                if not 0 <= int_current_number <= 2 or int_current_number in list_workspace:
+                    show_error_message('Некорректный ввод списка регистров для сумматора.')
+                    return None
+                list_workspace.append(int_current_number)
+            list_adders_registers.append(list_workspace)
+        else:
+            show_error_message('Некорректная длина списка регистров для сумматора.')
+            return None
+    return None
 
 app = QtWidgets.QApplication(sys.argv)
 MainWindow = QtWidgets.QMainWindow()

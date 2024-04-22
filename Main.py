@@ -1,4 +1,5 @@
 import sys
+import random
 from PyQt5.QtWidgets import QMessageBox
 from GUI import *
 
@@ -88,9 +89,17 @@ class Codec:
             dictionary_trellis_diagram[int_iteration] = dictionary_workspace
             int_iteration += 1
             list_states_for_processing = [string_current_state for string_current_state in dictionary_workspace.keys()]
-        print('Словарь решётчатой диаграммы:')
-        for string_current_key in dictionary_trellis_diagram.keys():
-            print('  {}: {}'.format(string_current_key, dictionary_trellis_diagram[string_current_key]))
+        ui.TableWidgetDictionaryTrellisDiagram.setRowCount(len(dictionary_trellis_diagram))
+        ui.TableWidgetDictionaryTrellisDiagram.setColumnCount(len(dictionary_trellis_diagram[1]))
+        ui.TableWidgetDictionaryTrellisDiagram.horizontalHeader().setVisible(False)
+        for int_current_iteration in dictionary_trellis_diagram.keys():
+            int_current_column_index = 0
+            for string_current_state in dictionary_trellis_diagram[int_current_iteration].keys():
+                string_current_output_text = "'{}': {}".format(string_current_state,
+                                                             dictionary_trellis_diagram[int_current_iteration][string_current_state])
+                ui.TableWidgetDictionaryTrellisDiagram.setItem(int_current_iteration, int_current_column_index,
+                                                           QtWidgets.QTableWidgetItem(string_current_output_text))
+                int_current_column_index += 1
         for int_current_iteration in dictionary_trellis_diagram.keys():
             int_current_index_state_minimal_difference = list(dictionary_trellis_diagram[int_current_iteration].keys()).index(min(
                 dictionary_trellis_diagram[int_current_iteration], key = dictionary_trellis_diagram[int_current_iteration].get))
@@ -107,11 +116,15 @@ def get_number_of_differences(string_first, string_second : str) -> int:
     for int_current_index in range(len(string_first)):
         if string_first[int_current_index] != string_second[int_current_index]: int_counter_of_differences += 1
     return int_counter_of_differences
-def show_error_message(string_error_message: str) -> None:
+def changing_the_bit(string_bit: str) -> str:
+    '''Заменяет бит на противоположный'''
+    return str((int(string_bit) + 1) % 2)
+def show_error_message(int_error_key: int, string_error_message: str) -> None:
     '''Вывод ошибок'''
+    dictionary_errors = {6: 'Некорректное создание кодека', 13: 'Ошибка процесса декодирования'}
     message_error = QMessageBox()
     message_error.setIcon(QMessageBox.Critical)
-    message_error.setText('Некорректное создание кодека')
+    message_error.setText(dictionary_errors[int_error_key])
     message_error.setInformativeText(string_error_message)
     message_error.setWindowTitle("Ошибка!")
     message_error.exec_()
@@ -122,7 +135,7 @@ def create_codec() -> None:
     int_count_of_adders = int(ui.SpinBoxCountOfAdders.value())
     list_adders_registers, list_input_adders_registers_text = [], ui.TextEditAddersRegisters.toPlainText().split('\n')
     if len(list_input_adders_registers_text) != int_count_of_adders:
-        show_error_message('Количество сумматоров не совпадает с присвоенными регистрами.')
+        show_error_message(6, 'Количество сумматоров не совпадает с присвоенными регистрами.')
         return None
     for string_current_row_input in list_input_adders_registers_text:
         int_length_of_row = len(string_current_row_input)
@@ -131,12 +144,12 @@ def create_codec() -> None:
             for string_current_number in string_current_row_input.split(' '):
                 int_current_number = int(string_current_number)
                 if not 0 <= int_current_number <= 2 or int_current_number in list_workspace:
-                    show_error_message('Некорректный ввод списка регистров для сумматора.')
+                    show_error_message(6, 'Некорректный ввод списка регистров для сумматора.')
                     return None
                 list_workspace.append(int_current_number)
             list_adders_registers.append(list_workspace)
         else:
-            show_error_message('Некорректная длина списка регистров для сумматора.')
+            show_error_message(6, 'Некорректная длина списка регистров для сумматора.')
             return None
     codec = Codec(int_count_of_adders, list_adders_registers)
     ui.SpinBoxCountOfAdders.setEnabled(False)
@@ -159,8 +172,8 @@ def create_codec() -> None:
     ui.TableWidgetDictionaryTransition.setVerticalHeaderLabels(codec.dictionary_transition.keys())
     for string_current_state in codec.dictionary_transition.keys():
         list_current_state_values = list(codec.dictionary_transition[string_current_state].values())
-        ui.TableWidgetDictionaryTransition.setItem(int_current_iteration, 0, QtWidgets.QTableWidgetItem(str(list_current_state_values[0])))
-        ui.TableWidgetDictionaryTransition.setItem(int_current_iteration, 1, QtWidgets.QTableWidgetItem(str(list_current_state_values[1])))
+        ui.TableWidgetDictionaryTransition.setItem(int_current_iteration, 0, QtWidgets.QTableWidgetItem("'{}'".format(str(list_current_state_values[0]))))
+        ui.TableWidgetDictionaryTransition.setItem(int_current_iteration, 1, QtWidgets.QTableWidgetItem("'{}'".format(str(list_current_state_values[1]))))
         int_current_iteration += 1
     return None
 def reset_codec() -> None:
@@ -183,7 +196,30 @@ def reset_codec() -> None:
     ui.PushButtonStartCodecWork.setEnabled(False)
     ui.TableWidgetDictionaryTrellisDiagram.setEnabled(False)
     ui.TextEditAddersRegisters.clear()
+    ui.TextEditMessageWord.clear()
+    ui.TextEditCodeWord.clear()
+    ui.TextEditInputTextReal.clear()
+    ui.TextEditOutputTextReal.clear()
     ui.TableWidgetDictionaryTransition.clearContents()
+    ui.TableWidgetDictionaryTrellisDiagram.clearContents()
+    return None
+def start_codec_work() -> None:
+    '''Кодирование и декодирование входного сообщения'''
+    global codec
+    string_input_text_real = ui.TextEditInputTextReal.toPlainText()
+    string_input_text_binary = bin(int.from_bytes(string_input_text_real.encode(), 'big'))[2:]
+    string_code_word = codec.encode(string_input_text_binary)
+    ui.TextEditCodeWord.setText(string_code_word)
+    int_position_of_error = random.randint(0, len(string_code_word) - 1)
+    string_message_word = (string_code_word[:int_position_of_error] + changing_the_bit(string_code_word[int_position_of_error]) +
+                string_code_word[int_position_of_error + 1:])
+    ui.TextEditMessageWord.setText(string_message_word)
+    string_output_text_binary = codec.decode(string_message_word)
+    if string_output_text_binary != string_input_text_binary: show_error_message(13,
+                                                'Длина раскодированного слова не совпадает с длиной информационного слова')
+    string_output_text_real = int(string_output_text_binary, 2).to_bytes((int(string_output_text_binary, 2).bit_length() + 7) // 8,
+                                                                         'big').decode()
+    ui.TextEditOutputTextReal.setText(string_output_text_real)
 
 app = QtWidgets.QApplication(sys.argv)
 MainWindow = QtWidgets.QMainWindow()
@@ -192,4 +228,5 @@ ui.setupUi(MainWindow)
 MainWindow.show()
 ui.PushButtonCreateCodec.clicked.connect(create_codec)
 ui.PushButtonResetCodec.clicked.connect(reset_codec)
+ui.PushButtonStartCodecWork.clicked.connect(start_codec_work)
 sys.exit(app.exec_())

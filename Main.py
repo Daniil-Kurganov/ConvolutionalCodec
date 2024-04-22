@@ -14,13 +14,12 @@ class Adder:
             int_result_bit = int(ord(str(int_result_bit)) ^ ord(str(list_current_word_in_registers[int_current_bit_index])))
         return int_result_bit
 class Codec:
-    def __init__(self, int_count_of_adders: int) -> None:
+    def __init__(self, int_count_of_adders: int, list_adders_registers: list) -> None:
         '''Запоминание количества регистров и сумматоров, создание списка сумматоров, создание словаря переходов состояний'''
         self.int_count_of_registers, self.int_count_of_adders = 3, int_count_of_adders
         self.list_of_adders = []
-        for int_current_number_of_adder in range(self.int_count_of_adders):
-            self.list_of_adders.append(Adder(list(map(int, input('Введите индексы для сумматора № {}: '.format(int_current_number_of_adder
-                                                                                                              + 1)).split()))))
+        for list_current_adder_registers in list_adders_registers:
+            self.list_of_adders.append(Adder(list_current_adder_registers))
         self.dictionary_transition = self.create_transition_dictionary()
         return None
     def encode(self, string_information_word: str) -> str:
@@ -119,9 +118,12 @@ def show_error_message(string_error_message: str) -> None:
     return None
 def create_codec() -> None:
     '''Создание нового кодека'''
+    global codec
     int_count_of_adders = int(ui.SpinBoxCountOfAdders.value())
     list_adders_registers, list_input_adders_registers_text = [], ui.TextEditAddersRegisters.toPlainText().split('\n')
-    if len(list_input_adders_registers_text) != int_count_of_adders: show_error_message('Количество сумматоров не совпадает с присвоенными регистрами.')
+    if len(list_input_adders_registers_text) != int_count_of_adders:
+        show_error_message('Количество сумматоров не совпадает с присвоенными регистрами.')
+        return None
     for string_current_row_input in list_input_adders_registers_text:
         int_length_of_row = len(string_current_row_input)
         if 1 <= int_length_of_row <= int_length_of_row * 2 -1 and int_length_of_row % 2 != 0:
@@ -136,7 +138,52 @@ def create_codec() -> None:
         else:
             show_error_message('Некорректная длина списка регистров для сумматора.')
             return None
+    codec = Codec(int_count_of_adders, list_adders_registers)
+    ui.SpinBoxCountOfAdders.setEnabled(False)
+    ui.TextEditAddersRegisters.setEnabled(False)
+    ui.PushButtonCreateCodec.setEnabled(False)
+    ui.TableWidgetDictionaryTransition.setEnabled(True)
+    ui.PushButtonResetCodec.setEnabled(True)
+    ui.LabelMessageWord.setEnabled(True)
+    ui.LabelInputTextReal.setEnabled(True)
+    ui.LabelOutputTextReal.setEnabled(True)
+    ui.LabelCodeWord.setEnabled(True)
+    ui.TextEditMessageWord.setEnabled(True)
+    ui.TextEditCodeWord.setEnabled(True)
+    ui.TextEditInputTextReal.setEnabled(True)
+    ui.TextEditOutputTextReal.setEnabled(True)
+    ui.PushButtonStartCodecWork.setEnabled(True)
+    ui.TableWidgetDictionaryTrellisDiagram.setEnabled(True)
+    int_current_iteration = 0
+    ui.TableWidgetDictionaryTransition.setRowCount(len(codec.dictionary_transition))
+    ui.TableWidgetDictionaryTransition.setVerticalHeaderLabels(codec.dictionary_transition.keys())
+    for string_current_state in codec.dictionary_transition.keys():
+        list_current_state_values = list(codec.dictionary_transition[string_current_state].values())
+        ui.TableWidgetDictionaryTransition.setItem(int_current_iteration, 0, QtWidgets.QTableWidgetItem(str(list_current_state_values[0])))
+        ui.TableWidgetDictionaryTransition.setItem(int_current_iteration, 1, QtWidgets.QTableWidgetItem(str(list_current_state_values[1])))
+        int_current_iteration += 1
     return None
+def reset_codec() -> None:
+    '''Сброс текущего кодека'''
+    global codec
+    codec = NotImplemented
+    ui.SpinBoxCountOfAdders.setEnabled(True)
+    ui.TextEditAddersRegisters.setEnabled(True)
+    ui.PushButtonCreateCodec.setEnabled(True)
+    ui.TableWidgetDictionaryTransition.setEnabled(False)
+    ui.PushButtonResetCodec.setEnabled(False)
+    ui.LabelMessageWord.setEnabled(False)
+    ui.LabelInputTextReal.setEnabled(False)
+    ui.LabelOutputTextReal.setEnabled(False)
+    ui.LabelCodeWord.setEnabled(False)
+    ui.TextEditMessageWord.setEnabled(False)
+    ui.TextEditCodeWord.setEnabled(False)
+    ui.TextEditInputTextReal.setEnabled(False)
+    ui.TextEditOutputTextReal.setEnabled(False)
+    ui.PushButtonStartCodecWork.setEnabled(False)
+    ui.TableWidgetDictionaryTrellisDiagram.setEnabled(False)
+    ui.TextEditAddersRegisters.clear()
+    ui.TableWidgetDictionaryTransition.clearContents()
 
 app = QtWidgets.QApplication(sys.argv)
 MainWindow = QtWidgets.QMainWindow()
@@ -144,4 +191,5 @@ ui = Ui_MainWindow()
 ui.setupUi(MainWindow)
 MainWindow.show()
 ui.PushButtonCreateCodec.clicked.connect(create_codec)
+ui.PushButtonResetCodec.clicked.connect(reset_codec)
 sys.exit(app.exec_())
